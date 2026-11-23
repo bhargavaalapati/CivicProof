@@ -4,10 +4,11 @@ import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { AddAfterPhotoForm } from "@/components/evidence/AddAfterPhotoForm";
+import { DeleteEvidenceButton } from "@/components/evidence/DeleteEvidenceButton";
 import { RunAssessmentPanel } from "@/components/evidence/RunAssessmentPanel";
 import { CitizenDecisionPanel } from "@/components/reports/CitizenDecisionPanel";
-import {WorkspaceNav} from "@/components/ui/WorkspaceNav";
-import {Breadcrumbs} from "@/components/ui/Breadcrumbs";
+import { WorkspaceNav } from "@/components/ui/WorkspaceNav";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { MapPin, Clock } from "lucide-react";
 
 function ReportDetailSkeleton() {
@@ -80,8 +81,6 @@ async function ReportDetailContent({
   const latestReview = reviews?.[0] ?? null;
 
   return (
-    <>
-    <WorkspaceNav />
     <div className="max-w-4xl mx-auto space-y-6">
       <Breadcrumbs
         items={[
@@ -149,9 +148,16 @@ async function ReportDetailContent({
               <p className="mt-2 text-[11px] text-slate-500 font-mono truncate">
                 SHA-256: {beforeEv.sha256_hash}
               </p>
+              <div className="mt-3">
+                <DeleteEvidenceButton
+                  reportId={report.id}
+                  evidenceId={beforeEv.id}
+                  phase="before"
+                />
+              </div>
             </div>
           ) : (
-            <p className="text-sm text-slate-500">No Before photo attached.</p>
+            <AddAfterPhotoForm reportId={report.id} phase="before" />
           )}
         </div>
 
@@ -168,13 +174,20 @@ async function ReportDetailContent({
               <p className="mt-2 text-[11px] text-slate-500 font-mono truncate">
                 SHA-256: {afterEv.sha256_hash}
               </p>
+              <div className="mt-3">
+                <DeleteEvidenceButton
+                  reportId={report.id}
+                  evidenceId={afterEv.id}
+                  phase="after"
+                />
+              </div>
               <div className="mt-4 pt-3 border-t border-slate-100">
                 <p className="text-xs text-slate-600 mb-2">Need to attach a clearer follow-up photo?</p>
-                <AddAfterPhotoForm reportId={report.id} />
+                <AddAfterPhotoForm reportId={report.id} phase="after" />
               </div>
             </div>
           ) : (
-            <AddAfterPhotoForm reportId={report.id} />
+            <AddAfterPhotoForm reportId={report.id} phase="after" />
           )}
         </div>
       </section>
@@ -213,7 +226,6 @@ async function ReportDetailContent({
         </ol>
       </section>
     </div>
-    </>
   );
 }
 
@@ -223,10 +235,13 @@ export default function ReportDetailPage({
   params: Promise<{ id: string }>;
 }) {
   return (
-    <main className="min-h-screen bg-[#FAF9F6] text-slate-900 py-6 px-4">
-      <Suspense fallback={<ReportDetailSkeleton />}>
-        <ReportDetailContent params={params} />
-      </Suspense>
-    </main>
+    <div className="min-h-screen bg-[#FAF9F6] text-slate-900 flex flex-col">
+      <WorkspaceNav />
+      <main id="main-content" className="flex-1 py-6 px-4">
+        <Suspense fallback={<ReportDetailSkeleton />}>
+          <ReportDetailContent params={params} />
+        </Suspense>
+      </main>
+    </div>
   );
 }

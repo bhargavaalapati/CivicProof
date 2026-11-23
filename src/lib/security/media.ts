@@ -43,6 +43,7 @@ export function detectImageSignature(buffer: Buffer): DetectedImageFormat | null
   return null;
 }
 
+// In src/lib/security/media.ts — update interface and sanitizeAndPrepareEvidence:
 export interface SanitizedEvidenceResult {
   jpegBuffer: Buffer;
   sha256Hash: string;
@@ -50,6 +51,7 @@ export interface SanitizedEvidenceResult {
   width: number;
   height: number;
   sizeBytes: number;
+  hadExifMetadata: boolean;
 }
 
 export async function sanitizeAndPrepareEvidence(params: {
@@ -74,6 +76,9 @@ export async function sanitizeAndPrepareEvidence(params: {
     );
   }
 
+  const rawMeta = await sharp(rawBuffer, { limitInputPixels: MAX_INPUT_PIXELS }).metadata();
+  const hadExifMetadata = Boolean(rawMeta.exif && rawMeta.exif.length > 0);
+
   // Auto-orient via EXIF then strip ALL EXIF/GPS metadata by re-encoding to clean JPEG
   const pipeline = sharp(rawBuffer, { limitInputPixels: MAX_INPUT_PIXELS })
     .rotate()
@@ -97,5 +102,6 @@ export async function sanitizeAndPrepareEvidence(params: {
     width: info.width,
     height: info.height,
     sizeBytes: jpegBuffer.length,
+    hadExifMetadata,
   };
 }
